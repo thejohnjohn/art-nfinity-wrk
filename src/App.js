@@ -1,49 +1,54 @@
-import PhotoAlbum from "react-photo-album";
-import photos from "./utils/photos";
 import { Fragment, useEffect, useState } from 'react';
+
+import { ObjectIDs } from './utils/data.js';
 import ModalInfo from './components/ModalInfo';
 
+import './App.css';
+
 const App = () => {
-    const url = 'https://collectionapi.metmuseum.org/public/collection/v1/search?dateBegin=1700&dateEnd=1800&hasImages=true&q=African';
+  const [timer, setTimer] = useState(0);
+  const [index, setIndex] = useState(0);
+  
+  let pause = false;
 
-    const [quantity, setQuantity] = useState(25);
-    const [photoGallery, setPhotoGallery] = useState([]);
-    const [galleryPage, setGalleryPage] = useState(0);
+  useEffect(() => {
+    let countdown = setTimeout(() => {
+      if(pause === false) {
+        setTimer(timer - 1);
+      }
+      if (timer < 1) {
+        let objectId = ObjectIDs[index];
+        fetch(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${objectId}`)
+        .then((response) => {
+          return response.json();
+        })
+        .then(data => console.log(data));
+        setIndex(prev => prev + 1);
+        setTimer(10);
+      }
+    }, 1250); 
+    return () => {
+      clearTimeout(countdown);
+    };
+  },[timer]);
 
-    const doAjax = async () => {
-        const response = await fetch(url);
-        if (response.ok) {
-            const jsonValue = await response.json();
-            return Promise.resolve(jsonValue);
-        } else {
-            return Promise.reject('*** file not found');
-        }
-    }
+  //Modal
+  const [show, setShow] = useState(false);
+  const openModal = () => setShow(true);
+  const closeModal = () => setShow(false);
 
-    useEffect(() => {
-        const test = setTimeout(() => {
-            setGalleryPage(prev => prev + 1);
-            console.log(galleryPage);
-        }, 3000);
-        console.log('test');
-        return () => clearTimeout(test);
-    },[galleryPage]);
+  return(
+    <Fragment>
+      <header>
+        
+        <span>{timer}</span>
+      </header>
+      <div className='image'>
 
-    //Modal
-    const [show, setShow] = useState(false);
-    const openModal = () => setShow(true);
-    const closeModal = () => setShow(false);
-
-    return(
-        <Fragment>
-            <PhotoAlbum photos={photos} 
-                        onClick={(key) => {
-                            openModal();
-                        }} 
-                        layout="masonry" />
-            { show && <ModalInfo show={show} close={closeModal} /> }
-        </Fragment>
-    );
+      </div>
+      { show && <ModalInfo show={show} close={closeModal} /> }
+    </Fragment>
+  );
 };
 
 export default App;
